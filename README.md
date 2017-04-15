@@ -1,4 +1,4 @@
-# nagios device check for nagios xi
+# Device Check for nagios xi
 
 Chef cookbook to install Nagios NRPE client (was previously part of the Nagios cookbook)
 
@@ -22,7 +22,7 @@ Installs the NRPE client via packages or source depending on platform and attrib
 
 ### configure
 
-Configures the NRPE client. 
+Configures the NRPE client.
 
 ## Attributes
 
