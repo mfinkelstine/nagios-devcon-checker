@@ -60,9 +60,7 @@ def devcon_status(device_id,device_name=None):
         p = subprocess.Popen(devcon_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         results = p.communicate()
         r = results[0]
-        #print("devcon_status output_results {0}\n".format(type(r)))
         for r in r.split('\r\n'):
-            #print("status {0}".format(r.strip()))
             if "Driver is" in r and "running." in r:
                 #print("status {0}".format(r))
                 return True
@@ -106,13 +104,13 @@ def main():
             typo = device_status
 
     if typo :
-        print "OK - Device is Connected|'%s'=%s" %( device_list[1],"UP")
+        print("OK - Device {0} is Connected|'{0}'={1}".format(device_list[1],"UP"))
         sys.exit(0)
     else:
         if comments :
-            print "CRITICAL - Device is not Connected %s|'Device is Offline'=%s " %( stringSearch, comments,"DOWN")
+            print("CRITICAL - Device {0} is not Connected {1}|'Device is Offline'=%{2} ".format( stringSearch, comments,"DOWN"))
         else:
-            print "CRITICAL - Device is not Connected %s|'Device is Offline'=%s " %( stringSearch,"DOWN")
+            print("CRITICAL - Device is not Connected %{0}|'Device is Offline'=%{1} ".format( stringSearch,"DOWN"))
         sys.exit(2)
 
 if __name__ == '__main__':
