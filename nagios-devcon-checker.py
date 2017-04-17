@@ -10,7 +10,9 @@ __program__= 'devcon emulator'
 
 
 
-devcon = 'devcon'
+
+devcon_path = 'C:\\'
+devcon_name = "devcon.exe"
 debug = False
 
 def parse_args():
@@ -34,8 +36,8 @@ def parse_args():
 
 def runCmd(classtype):
     #args = shlex.split(cmd)
-    devcon = "devcon.exe"
-    devcon_command = "C:\\"+devcon+" find  *"+classtype+"*"
+
+    devcon_command = devcon_path+devcon_name+" find  *"+classtype+"*"
     try:
         if debug : print "[+] command args %s"%devcon_command
         p = subprocess.Popen(devcon_command.split(),shell=True,
@@ -47,38 +49,29 @@ def runCmd(classtype):
         print >>sys.stderr, "Execution failed", e
 
 
-def devcon_status(device_hwid,device_name=None):
-    devcon = "devcon.exe"
+def devcon_status(device_id,device_name=None):
     #devcon status "@PCI\VEN_8086&DEV_1130&SUBSYS_00000000&REV_02\3&29E81982&0&00"
-    devcon_cmd = "C:\\"+devcon+" status \"@"+device_hwid+"\""
+    device = re.sub(r'\\x0', "\\\\", repr(device_id))
+    device_hwid = device.replace('\\\\','\\').replace("'","")
+    devcon_cmd = devcon_path + devcon_name + " status \"@" + device_hwid.replace('\\\\', '\\') + "\""
+    #print("\n[+] devcon_status : {0} device_name {1}\nCOMMAND {2}\n".format(device_hwid.replace('\'',''), device_name,devcon_cmd))
+
     try:
         p = subprocess.Popen(devcon_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         results = p.communicate()
-        #print("results status {0} command {1}".format(results,devcon_cmd))
-        output_results = results.split(' ')
-        print("output_results {0}".format(output_results))
-        #for r in output_results:
-        #    print("status {0}".format(r))
-        #    if "Driver is" in r:
-        #        print("status {0}".format(r))
-
-
+        r = results[0]
+        #print("devcon_status output_results {0}\n".format(type(r)))
+        for r in r.split('\r\n'):
+            #print("status {0}".format(r.strip()))
+            if "Driver is" in r and "running." in r:
+                #print("status {0}".format(r))
+                return True
     except:
         print("CRITICAL - Device is not Connected {0}|'Device is Offline'={1} ".format(device_name,"DOWN"))
         sys.exit(3)
 
-
-
 def main():
     results = {}
-    win32path = os.path.realpath(__file__)+"\\lib\\"
-    #devconExec  = win32path+"devcon.exe"
-    devconExec = "C:\\devcon.exe"
-
-    # to check touch screen
-    # c:\devcon.exe listclass HIDClass
-
-    if debug: print "[+] devcon execute on %s " % (devconExec)
     '''
     devcon listclass net
     '''
@@ -88,14 +81,6 @@ def main():
         print "CRITICAL - You Most define string to Search"
         sys.exit(2)
 
-    #if not os.path.isfile(devconExec):
-    #    if debug : print "[+] file does not exist on %s on platform %s sep %s " %(file,sys.platform,sys.stdout.isatty())
-    #    print "CRITICAL - devcon file does not exist "
-    #    sys.exit(3)
-        
-    if debug : print "[+] Results are search type %s find string %s String to Search %s" %(classType, className , stringSearch)
-
-
     results = runCmd(classType)
 
     if not results:
@@ -103,33 +88,25 @@ def main():
         sys.exit(3)
     c = 0
     typo = False
-    tuple_devices = list(results)
-    # convert tuple to string
-    devices = tuple_devices[0]
+    tuple_list_devices = list(results)
+    devices = tuple_list_devices[0]
     device_list = []
-    #device_list = {}
 
-    #for i in range(len(devices)):
-    #    cc+=1
-    #    print("[{0}] deviceList {1}".format(cc,devices[i]))
-
-    for device_name in devices.split('\r\n'):
-        if debug: print( "[+] cc [{0}] data {1}".format(c,device_name))
+    for device in devices.split('\r\n'):
+        #print( "[+] cc [{0}] data {1}".format(c,device))
         c+=1
 
-        if stringSearch in device_name:
-            print("[+] stringSearch : {0} device_name {1}".format(stringSearch,device_name))
-            d,n = device_name.split(":")
-
-            devcon_status(d.strip())
+        if stringSearch in device:
+            #print("[+] stringSearch : {0} device_name {1}".format(stringSearch,device))
+            d,n = device.split(":")
+            device_status = devcon_status(d.strip(),n)
             device_list.append(d.strip())
             device_list.append(n.strip())
-            print("[+] device_List {0}".format(device_list[0]))
+            #print("[+] device_List {0}".format(device_list[0]))
+            typo = device_status
 
-            typo = True
-    sys.exit(1000)
     if typo :
-        print "OK - Device is Connected|'%s'=%s" %( deviceList[1],"UP")
+        print "OK - Device is Connected|'%s'=%s" %( device_list[1],"UP")
         sys.exit(0)
     else:
         if comments :
